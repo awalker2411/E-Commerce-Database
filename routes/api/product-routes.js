@@ -8,7 +8,7 @@ router.get('/', async(req, res) => {
   // find all products
   // be sure to include its associated Category and Tag data
   try{
-    const proInfo = await Product.findAll({include: Category})
+    const proInfo = await Product.findAll({include: [{model: Category},{model: Tag}]})
     res.status(200).json(proInfo)
   }catch(err){
     res.status(500).json(err)
@@ -44,18 +44,18 @@ router.post('/', (req, res) => {
     .then((product) => {
       // if there's product tags, we need to create pairings to bulk create in the ProductTag model
       if (req.body.tagIds.length) {
-        const productTagIdArr = req.body.tagIds.map((tag_id) => {
+        const proTagIdArray = req.body.tagIds.map((tag_id) => {
           return {
             product_id: product.id,
             tag_id,
           };
         });
-        return ProductTag.bulkCreate(productTagIdArr);
+        return ProductTag.bulkCreate(proTagIdArray);
       }
       // if no product tags, just respond
       res.status(200).json(product);
     })
-    .then((productTagIds) => res.status(200).json(productTagIds))
+    .then((proTagIds) => res.status(200).json(proTagIds))
     .catch((err) => {
       console.log(err);
       res.status(400).json(err);
@@ -65,11 +65,7 @@ router.post('/', (req, res) => {
 // update product
 router.put('/:id', (req, res) => {
   // update product data
-  Product.update(req.body, {
-    where: {
-      id: req.params.id,
-    },
-  })
+  Product.update(req.body, {where:{id: req.params.id}})
     .then((product) => {
       // find all associated tags from ProductTag
       return ProductTag.findAll({ where: { product_id: req.params.id } });
